@@ -7,7 +7,7 @@ O produto valida dois fluxos centrais:
 - `Agendar servico`: para o cliente que ja sabe o que precisa.
 - `Falar com o tecnico`: para o cliente que precisa explicar o defeito antes de fechar.
 
-Neste estagio, a experiencia principal do MVP ja esta montada localmente. A conexao com `Supabase` esta preparada e parcialmente acoplada aos fluxos operacionais, com aplicacao da migration real e validacao em ambiente publicado ainda pendentes.
+Neste estagio, a experiencia principal do MVP esta publicada na Cloudflare. A persistencia real agora usa Cloudflare D1 como banco do projeto.
 
 ## O que este projeto demonstra
 
@@ -15,16 +15,17 @@ Neste estagio, a experiencia principal do MVP ja esta montada localmente. A cone
 - Fluxo tecnico/cliente com pagina publica por `slug` e QR code.
 - Agendamento direto e fluxo consultivo com conversa.
 - Inbox do tecnico para acompanhar pedidos e threads.
-- Centro local de alertas/eventos para simular notificacoes.
-- Preparacao de persistencia com Supabase e fallback local.
-- Estrutura pronta para deploy futuro na Vercel.
+- Centro de alertas/eventos do tecnico salvo no Cloudflare D1.
+- Persistencia principal em Cloudflare D1.
+- Deploy atual em Cloudflare Workers com Static Assets.
 - Documentacao de produto por fluxo, nao apenas por tecnologia.
 
 ## Stack
 
 - Frontend: `React`, `Vite`, `Tailwind CSS`.
-- Dados/Auth: `Supabase` preparado e parcialmente acoplado.
-- Deploy: `Vercel` como destino futuro.
+- Dados: `Cloudflare D1`.
+- Auth: fluxo simplificado do MVP, com autenticacao real a definir.
+- Deploy: `Cloudflare Workers` com Static Assets.
 - Testes: testes de regras/dados no workspace `web/tests`.
 - Documentacao: fluxos em `docs/`.
 
@@ -39,23 +40,21 @@ Implementado:
 - inbox do tecnico com pedidos e conversas;
 - resposta do tecnico dentro da thread consultiva;
 - visao do cliente para acompanhar a resposta;
-- centro local de alertas/eventos;
+- centro de alertas/eventos salvo no Cloudflare D1;
 - code-splitting no frontend para evitar bundle grande no build.
 
 Ainda local/mockado ou pendente:
 
 - notificacoes reais via WhatsApp;
-- autenticacao real completa do `Supabase`;
-- migration operacional aplicada no projeto Supabase;
-- validacao ponta a ponta em ambiente publicado;
-- deploy em `Vercel`.
+- autenticacao real na stack Cloudflare;
+- validacao ponta a ponta completa em ambiente publicado.
 
 ## Estrutura
 
 ```txt
 ice-clear-mvp/
 |-- docs/       # Fluxos de produto e setup operacional
-|-- supabase/   # Migrations e preparacao da camada de dados
+|-- cloudflare/ # Configuracoes e referencias de dados para Cloudflare
 `-- web/        # Aplicacao React/Vite
 ```
 
@@ -83,7 +82,7 @@ ice-clear-mvp/
 - `docs/customer-consultation-thread.md`
 - `docs/technician-dashboard.md`
 - `docs/notification-center.md`
-- `docs/supabase-setup.md`
+- `docs/cloudflare-setup.md`
 
 ## Desenvolvimento local
 
@@ -106,9 +105,8 @@ npm run build
 
 1. Fechar o MVP local.
 2. Publicar o estado tecnico no Git.
-3. Aplicar a migration operacional no `Supabase`.
-4. Validar auth, pedidos e conversas com dados reais.
-5. Conectar o deploy na `Vercel`.
+3. Validar auth, pedidos e conversas com dados reais.
+5. Manter o deploy na `Cloudflare`.
 6. Adicionar notificacoes reais via WhatsApp.
 
 ## Observacao

@@ -16,7 +16,7 @@ sem precisar conversar com o tecnico antes.
 - coleta nome, WhatsApp, data, janela, endereco e observacoes
 - valida os campos obrigatorios
 - gera um pedido estruturado
-- salva localmente no MVP
+- salva pedidos no Cloudflare D1 via API Worker
 
 ## Arquivos principais
 
@@ -27,7 +27,6 @@ sem precisar conversar com o tecnico antes.
 
 ## Proxima evolucao
 
-1. Persistir `service_requests` no Supabase.
-2. Exibir o pedido no painel do tecnico.
-3. Notificar o tecnico via WhatsApp.
-4. Permitir confirmacao, recusa ou remarcacao.
+1. Validar criacao e leitura de `service_requests` via API Worker no painel do tecnico.
+2. Notificar o tecnico via WhatsApp.
+3. Permitir confirmacao, recusa ou remarcacao.

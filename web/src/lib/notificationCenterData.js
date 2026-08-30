@@ -1,4 +1,4 @@
-const notificationEventsStorageKey = 'ice-clear-notification-events'
+import { cloudflareApiRequest } from './cloudflareApiClient.js'
 
 function normalizeText(value) {
   return String(value ?? '').trim()
@@ -32,60 +32,46 @@ export function sortNotificationEventsByNewest(events) {
   )
 }
 
-function readStoredNotificationEvents() {
-  if (typeof window === 'undefined') {
-    return []
-  }
-
-  const raw = window.localStorage.getItem(notificationEventsStorageKey)
-
-  if (!raw) {
-    return []
-  }
-
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    window.localStorage.removeItem(notificationEventsStorageKey)
-    return []
-  }
-}
-
-function writeStoredNotificationEvents(events) {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.localStorage.setItem(notificationEventsStorageKey, JSON.stringify(events))
-}
-
-export function createLocalNotificationEvent(input) {
-  const event = {
-    id: crypto.randomUUID(),
-    ...buildNotificationEvent(input),
-  }
-
-  const currentEvents = readStoredNotificationEvents()
-  writeStoredNotificationEvents(sortNotificationEventsByNewest([event, ...currentEvents]))
+export async function createNotificationEvent(input, { apiRequest = cloudflareApiRequest } = {}) {
+  const { event } = await apiRequest('/api/notifications', {
+    method: 'POST',
+    body: buildNotificationEvent(input),
+  })
 
   return event
 }
 
-export function listLocalNotificationEvents({ audience, technicianSlug = '' } = {}) {
-  const events = readStoredNotificationEvents()
+export async function listNotificationEvents(
+  { audience, technicianSlug = '' } = {},
+  { apiRequest = cloudflareApiRequest } = {},
+) {
+  const query = new URLSearchParams()
 
-  return sortNotificationEventsByNewest(
-    events.filter((event) => {
-      if (audience && event.audience !== audience) {
-        return false
-      }
+  if (audience) {
+    query.set('audience', audience)
+  }
 
-      if (technicianSlug && event.technicianSlug && event.technicianSlug !== technicianSlug) {
-        return false
-      }
+  if (technicianSlug) {
+    query.set('technicianSlug', technicianSlug)
+  }
 
-      return true
-    }),
+  const { events } = await apiRequest(`/api/notifications?${query}`)
+
+  return sortNotificationEventsByNewest(events ?? [])
+}
+
+export async function updateNotificationEventStatus(
+  eventId,
+  status,
+  { apiRequest = cloudflareApiRequest } = {},
+) {
+  const { event } = await apiRequest(
+    `/api/notifications/${encodeURIComponent(eventId)}/status`,
+    {
+      method: 'PATCH',
+      body: { status },
+    },
   )
+
+  return event
 }

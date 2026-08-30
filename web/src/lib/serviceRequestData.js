@@ -1,4 +1,5 @@
 import { buildBookingRequest } from './bookingData.js'
+import { cloudflareApiRequest } from './cloudflareApiClient.js'
 
 const serviceRequestsStorageKey = 'ice-clear-service-requests'
 
@@ -30,6 +31,16 @@ function writeStoredServiceRequests(requests) {
   window.localStorage.setItem(serviceRequestsStorageKey, JSON.stringify(requests))
 }
 
+function saveLocalServiceRequestRecord(request) {
+  const currentRequests = readStoredServiceRequests()
+  const nextRequests = [
+    request,
+    ...currentRequests.filter((currentRequest) => currentRequest.id !== request.id),
+  ]
+
+  writeStoredServiceRequests(nextRequests)
+}
+
 export function updateServiceRequestStatusInList(requests, requestId, nextStatus) {
   return requests.map((request) =>
     request.id === requestId ? { ...request, status: nextStatus } : request,
@@ -44,8 +55,7 @@ export function createLocalServiceRequest(form) {
     createdAt: new Date().toISOString(),
   }
 
-  const currentRequests = readStoredServiceRequests()
-  writeStoredServiceRequests([request, ...currentRequests])
+  saveLocalServiceRequestRecord(request)
 
   return request
 }
@@ -67,4 +77,45 @@ export function updateLocalServiceRequestStatus(requestId, nextStatus) {
   writeStoredServiceRequests(nextRequests)
 
   return nextRequests.find((request) => request.id === requestId) ?? null
+}
+
+export async function createServiceRequest(form) {
+  const payload = buildBookingRequest(form)
+  const { request } = await cloudflareApiRequest('/api/service-requests', {
+    method: 'POST',
+    body: payload,
+  })
+
+  saveLocalServiceRequestRecord(request)
+
+  return { mode: 'cloudflare', request }
+}
+
+export async function listServiceRequestsByTechnician(technicianSlug) {
+  const query = new URLSearchParams({ technicianSlug })
+  const { requests } = await cloudflareApiRequest(`/api/service-requests?${query}`)
+
+  requests.forEach(saveLocalServiceRequestRecord)
+
+  return {
+    mode: 'cloudflare',
+    requests,
+  }
+}
+
+export async function updateServiceRequestStatus(requestId, nextStatus) {
+  const { request } = await cloudflareApiRequest(
+    `/api/service-requests/${encodeURIComponent(requestId)}/status`,
+    {
+      method: 'PATCH',
+      body: { status: nextStatus },
+    },
+  )
+
+  saveLocalServiceRequestRecord(request)
+
+  return {
+    mode: 'cloudflare',
+    request,
+  }
 }

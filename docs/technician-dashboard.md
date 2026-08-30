@@ -10,8 +10,8 @@ Dar ao técnico um primeiro inbox operacional para enxergar pedidos diretos e co
 
 ## Comportamento do MVP
 
-- lê pedidos diretos salvos localmente
-- lê conversas consultivas salvas localmente
+- lê pedidos diretos salvos no Cloudflare D1
+- lê conversas consultivas salvas no Cloudflare D1
 - junta tudo em uma única timeline ordenada por data mais recente
 - mostra contadores simples de volume operacional
 
@@ -23,6 +23,6 @@ Dar ao técnico um primeiro inbox operacional para enxergar pedidos diretos e co
 
 ## Próxima evolução
 
-1. Substituir leitura local por `service_requests` e `chat_threads` reais.
+1. Evoluir filtros e estados operacionais para `service_requests` e `consultation_threads` reais.
 2. Adicionar ações do técnico: confirmar, recusar, responder.
 3. Acoplar notificação por WhatsApp para novos itens.

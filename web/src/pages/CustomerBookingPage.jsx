@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import SectionLabel from '../components/SectionLabel.jsx'
 import { serviceOptions } from '../data/services.js'
 import { validateBookingForm } from '../lib/bookingData.js'
-import { createLocalServiceRequest } from '../lib/serviceRequestData.js'
-import { createLocalNotificationEvent } from '../lib/notificationCenterData.js'
+import { createServiceRequest } from '../lib/serviceRequestData.js'
+import { createNotificationEvent } from '../lib/notificationCenterData.js'
 import { getPublicTechnicianBySlug } from '../lib/technicianData.js'
 
 const initialForm = {
@@ -33,6 +33,7 @@ function CustomerBookingPage() {
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
   const [submittedRequest, setSubmittedRequest] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -49,7 +50,7 @@ function CustomerBookingPage() {
           setStatus({
             type: 'error',
             message:
-              'Não encontramos um técnico publicado para este QR. Volte e finalize o onboarding do técnico.',
+              'Não encontramos um técnico publicado para este QR. Volte e finalize o cadastro do técnico.',
           })
           return
         }
@@ -63,10 +64,7 @@ function CustomerBookingPage() {
         }))
         setStatus({
           type: 'success',
-          message:
-            data.mode === 'supabase'
-              ? 'Técnico carregado do Supabase. Você já pode solicitar o serviço.'
-              : 'Técnico carregado do fallback local do MVP. Você já pode solicitar o serviço.',
+          message: 'Técnico identificado. Você já pode solicitar o serviço.',
         })
       } catch (error) {
         if (!active) {
@@ -92,7 +90,7 @@ function CustomerBookingPage() {
     setErrors((current) => ({ ...current, [field]: '' }))
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const nextErrors = validateBookingForm({
@@ -110,29 +108,38 @@ function CustomerBookingPage() {
       return
     }
 
+    setIsSubmitting(true)
 
-const request = createLocalServiceRequest({
-  ...form,
-  technicianSlug: slug,
-})
+    try {
+      const { request } = await createServiceRequest({
+        ...form,
+        technicianSlug: slug,
+      })
 
-createLocalNotificationEvent({
-  type: 'booking_created',
-  audience: 'technician',
-  technicianSlug: slug,
-  title: 'Novo pedido recebido',
-  message: `${request.customerName} solicitou ${request.serviceName}.`,
-  relatedId: request.id,
-})
+      await createNotificationEvent({
+        type: 'booking_created',
+        audience: 'technician',
+        technicianSlug: slug,
+        title: 'Novo pedido recebido',
+        message: `${request.customerName} solicitou ${request.serviceName}.`,
+        relatedId: request.id,
+      })
 
-    setSubmittedRequest(request)
-    setStatus({
-      type: 'success',
-      message:
-        'Pedido enviado no MVP. O próximo passo é ligar isso à notificação do técnico e ao painel interno.',
-    })
-    setForm(initialForm)
-    setErrors({})
+      setSubmittedRequest(request)
+      setStatus({
+        type: 'success',
+        message: 'Pedido enviado. O técnico poderá acompanhar pelo painel e retornar pelo canal informado.',
+      })
+      setForm(initialForm)
+      setErrors({})
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        message: `Falha ao enviar pedido: ${error.message}`,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const statusTone = {
@@ -144,7 +151,7 @@ createLocalNotificationEvent({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f7fbff_0%,#eef5f8_40%,#e8eef2_100%)] px-6 py-8 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8 flex items-center justify-between rounded-full border border-white bg-white/90 px-5 py-3 shadow-[0_10px_40px_rgba(15,23,42,0.08)]">
+        <header className="mb-8 flex flex-col gap-3 rounded-3xl border border-white bg-white/90 px-5 py-4 shadow-[0_10px_40px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between sm:rounded-full sm:py-3">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-sky-700">
               Ice Clear
@@ -154,7 +161,7 @@ createLocalNotificationEvent({
           <div className="flex gap-3">
             <Link
               to={`/t/${slug}`}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
             >
               Voltar para o QR
             </Link>
@@ -296,9 +303,10 @@ createLocalNotificationEvent({
               <div className="md:col-span-2">
                 <button
                   type="submit"
-                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                  disabled={isSubmitting}
+                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Enviar pedido de serviço
+                  {isSubmitting ? 'Enviando pedido...' : 'Enviar pedido de serviço'}
                 </button>
               </div>
             </form>
@@ -346,7 +354,7 @@ createLocalNotificationEvent({
                 </div>
               ) : (
                 <p className="mt-5 text-sm leading-6 text-slate-600">
-                  Depois do envio, o pedido aparece aqui como confirmação rápida do MVP.
+                  Depois do envio, o pedido aparece aqui como confirmação rápida.
                 </p>
               )}
             </section>

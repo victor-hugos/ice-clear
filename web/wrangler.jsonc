@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ice-clear-mvp",
+  "main": "./worker/index.js",
+  "compatibility_date": "2026-08-30",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ice-clear-mvp",
+      "database_id": "9dfe984f-df72-42a3-8598-6da99062c7b4",
+      "migrations_dir": "../cloudflare/migrations"
+    }
+  ]
+}

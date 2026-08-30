@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import SectionLabel from '../components/SectionLabel.jsx'
+import heroImage from '../assets/hero.png'
 
 const technicianSteps = [
   'Cria a conta com nome, WhatsApp e cidade.',
@@ -21,154 +22,176 @@ const customerActions = [
   },
 ]
 
-const foundations = [
-  'React + Vite + Tailwind',
-  'Supabase para auth, banco, storage e realtime',
-  'WhatsApp como notificação, não como chat principal',
-  'Pagamento na plataforma para reduzir contorno',
+const businessLevers = [
+  {
+    title: 'Cliente volta no tempo certo',
+    description:
+      'O QR transforma cada atendimento em uma porta de retorno para limpeza, revisão e manutenção preventiva.',
+  },
+  {
+    title: 'Mais pedidos ficam registrados',
+    description:
+      'Agendamentos e conversas entram no painel antes de virar WhatsApp solto, reduzindo perda de histórico.',
+  },
+  {
+    title: 'Receita recorrente por relacionamento',
+    description:
+      'O técnico pode vender planos de manutenção, lembretes e pacotes por temporada em vez de depender só de chamados avulsos.',
+  },
 ]
 
 function LandingPage() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#dcf4ff_0%,#f5fbff_38%,#eef4f7_100%)] text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-6 sm:px-8 lg:px-10">
-        <header className="mb-10 flex items-center justify-between rounded-full border border-white/70 bg-white/70 px-5 py-3 shadow-[0_10px_40px_rgba(27,66,88,0.08)] backdrop-blur">
-          <div>
-            <p className="font-mono text-xs uppercase tracking-[0.32em] text-sky-700">
-              Ice Clear
-            </p>
-            <p className="text-sm text-slate-600">
-              MVP para técnicos de ar-condicionado
-            </p>
+    <div className="min-h-screen bg-[#f5f7f4] text-slate-900">
+      <div className="mx-auto w-full max-w-7xl px-5 py-5 sm:px-8 lg:px-10">
+        <header className="mb-5 flex flex-col gap-3 border-b border-slate-200/80 bg-[#f5f7f4]/95 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src="/2.jpg"
+              alt="Ícone da marca Ice Clear"
+              className="h-12 w-12 rounded-xl border border-slate-200 bg-white/70 object-cover p-1 shadow-sm"
+            />
+            <div>
+              <img
+                src="/1.jpg"
+                alt="Logo Ice Clear"
+                className="h-8 w-auto object-contain"
+              />
+              <p className="text-sm text-slate-600">
+                Plataforma de recorrência para técnicos de ar-condicionado
+              </p>
+            </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2">
             <a
-              href="#foundation"
-              className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-900 transition hover:border-sky-300 hover:bg-sky-100"
+              href="#business-model"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:bg-slate-50"
             >
-              Ver base do produto
+              Ver modelo
             </a>
             <Link
               to="/tecnico/entrar"
-              className="rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-900"
             >
               Entrar como técnico
             </Link>
           </div>
         </header>
 
-        <main className="grid flex-1 gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-          <section className="rounded-[2rem] border border-white/80 bg-white/80 p-8 shadow-[0_24px_80px_rgba(19,52,71,0.12)] backdrop-blur lg:p-12">
-            <SectionLabel>QR code + agendamento + recorrência</SectionLabel>
-            <h1 className="mt-4 max-w-3xl font-['Space_Grotesk',ui-sans-serif,system-ui] text-5xl font-semibold leading-[0.95] tracking-[-0.04em] text-slate-950 sm:text-6xl">
-              O cliente escaneia. O técnico organiza. A manutenção volta.
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              O Ice Clear nasce como uma plataforma simples para técnicos de
-              ar-condicionado fidelizarem clientes com QR fixo, conversa
-              mediada, agendamento direto e manutenção periódica.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href="#customer-flows"
-                className="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-              >
-                Ver fluxos do cliente
-              </a>
-              <Link
-                to="/tecnico/onboarding"
-                className="rounded-full border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                Testar onboarding
-              </Link>
+        <main>
+          <section className="relative min-h-[calc(100vh-8rem)] overflow-hidden rounded-lg bg-slate-950 text-white shadow-[0_24px_80px_rgba(15,23,42,0.18)]">
+            <img
+              src={heroImage}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover opacity-55"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/78 to-slate-950/20" />
+            <div className="absolute right-6 top-6 hidden w-44 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm sm:block lg:right-10 lg:top-10">
+              <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
+                <img
+                  src="/2.jpg"
+                  alt="Marca Ice Clear em destaque"
+                  className="mx-auto h-28 w-28 object-contain"
+                />
+              </div>
             </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              <article className="rounded-[1.5rem] bg-slate-950 p-5 text-white">
-                <SectionLabel tone="light">Entrada</SectionLabel>
-                <h2 className="mt-3 text-2xl font-semibold">QR fixo</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-300">
-                  Sem reimpressão por atendimento no MVP. O QR leva para a
-                  página oficial do técnico.
-                </p>
-              </article>
-              <article className="rounded-[1.5rem] border border-sky-100 bg-sky-50/90 p-5">
-                <SectionLabel>Operação</SectionLabel>
-                <h2 className="mt-3 text-2xl font-semibold text-slate-950">
-                  Chat interno
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  O cliente descreve o defeito por texto, foto ou áudio e o
-                  técnico responde com alerta via WhatsApp.
-                </p>
-              </article>
-              <article className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/90 p-5">
-                <SectionLabel tone="emerald">Retenção</SectionLabel>
-                <h2 className="mt-3 text-2xl font-semibold text-slate-950">
-                  Recorrência
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Limpeza e revisão periódica entram como fluxo nativo do
-                  produto, não como improviso.
-                </p>
-              </article>
+            <div className="relative flex min-h-[calc(100vh-8rem)] max-w-3xl flex-col justify-end px-6 py-8 sm:px-10 lg:px-12">
+              <SectionLabel tone="light">QR code + agendamento + recorrência</SectionLabel>
+              <h1 className="mt-4 font-['Space_Grotesk',ui-sans-serif,system-ui] text-5xl font-semibold leading-none text-white sm:text-7xl">
+                Ice Clear
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-100">
+                Plataforma para técnicos de ar-condicionado transformarem cada atendimento em retorno: QR fixo, pedidos organizados, conversa inicial e manutenção periódica.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a
+                  href="#customer-flows"
+                  className="rounded-lg bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-cyan-200"
+                >
+                  Ver fluxos do cliente
+                </a>
+                <Link
+                  to="/tecnico/onboarding"
+                  className="rounded-lg border border-white bg-white px-5 py-3 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-slate-100"
+                >
+                  Simular entrada do técnico
+                </Link>
+              </div>
+              <div className="mt-10 grid gap-3 border-t border-white/20 pt-5 text-sm text-slate-200 sm:grid-cols-3">
+                <p>QR fixo no cliente</p>
+                <p>Chat antes do orçamento</p>
+                <p>Lembretes de manutenção</p>
+              </div>
             </div>
           </section>
 
-          <aside className="flex flex-col gap-6">
-            <section
-              id="customer-flows"
-              className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-8 text-white shadow-[0_24px_80px_rgba(10,20,30,0.24)]"
-            >
-              <SectionLabel tone="light">Fluxos do cliente</SectionLabel>
-              <div className="mt-6 space-y-4">
-                {customerActions.map((action) => (
-                  <article
-                    key={action.title}
-                    className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5"
-                  >
-                    <h2 className="text-xl font-semibold">{action.title}</h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                      {action.description}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </section>
+          <section id="customer-flows" className="grid gap-4 border-b border-slate-200 py-8 md:grid-cols-3">
+            {customerActions.map((action, index) => (
+              <article
+                key={action.title}
+                className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <SectionLabel tone={index === 0 ? 'sky' : 'emerald'}>
+                  Fluxo {index + 1}
+                </SectionLabel>
+                <h2 className="mt-3 text-2xl font-semibold text-slate-950">{action.title}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {action.description}
+                </p>
+              </article>
+            ))}
+            <article className="rounded-lg border border-amber-200 bg-amber-50 p-5 shadow-sm">
+              <SectionLabel tone="amber">Retenção</SectionLabel>
+              <h2 className="mt-3 text-2xl font-semibold text-slate-950">
+                Recorrência
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-700">
+                Limpeza e revisão periódica viram uma rotina visível para o técnico, não uma lembrança solta no WhatsApp.
+              </p>
+            </article>
+          </section>
 
-            <section
-              id="foundation"
-              className="rounded-[2rem] border border-white/80 bg-white/80 p-8 shadow-[0_24px_80px_rgba(19,52,71,0.12)] backdrop-blur"
-            >
-              <SectionLabel>Fundação técnica</SectionLabel>
-              <ul className="mt-5 space-y-3 text-sm leading-6 text-slate-700">
-                {foundations.map((item) => (
-                  <li
-                    key={item}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </aside>
+          <section
+            id="business-model"
+            className="grid gap-8 py-8 lg:grid-cols-[0.8fr_1.2fr]"
+          >
+            <div>
+              <SectionLabel>Valor e negócio</SectionLabel>
+              <h2 className="mt-4 font-['Space_Grotesk',ui-sans-serif,system-ui] text-3xl font-semibold text-slate-950 sm:text-4xl">
+                Fidelização vira rotina, não improviso.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                Modelo sugerido: assinatura mensal para o técnico, taxa sobre pedidos pagos e pacotes de automação para lembretes de limpeza, revisão e retorno por temporada.
+              </p>
+            </div>
+            <div className="grid gap-3">
+              {businessLevers.map((item) => (
+                <article
+                  key={item.title}
+                  className="rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm"
+                >
+                  <h3 className="font-semibold text-slate-950">{item.title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
+                </article>
+              ))}
+            </div>
+          </section>
         </main>
 
         <section
           id="technician-flow"
-          className="mt-8 rounded-[2rem] border border-white/80 bg-white/75 p-8 shadow-[0_24px_80px_rgba(19,52,71,0.12)] backdrop-blur lg:p-10"
+          className="border-t border-slate-200 py-8"
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
               <SectionLabel>Jornada do técnico</SectionLabel>
-              <h2 className="mt-4 font-['Space_Grotesk',ui-sans-serif,system-ui] text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">
-                O produto precisa ensinar o uso sozinho.
+              <h2 className="mt-4 font-['Space_Grotesk',ui-sans-serif,system-ui] text-3xl font-semibold text-slate-950 sm:text-4xl">
+                Menos cliente perdido depois do primeiro serviço.
               </h2>
               <p className="mt-4 text-base leading-7 text-slate-600">
-                O MVP foi desenhado para que o técnico crie a conta, gere o QR
-                e opere pedidos sem precisar aprender um sistema pesado.
+                A experiência foi desenhada para o técnico criar sua página,
+                compartilhar o QR e manter pedidos, conversas e retornos em um
+                fluxo simples de operação.
               </p>
             </div>
 
@@ -176,9 +199,9 @@ function LandingPage() {
               {technicianSteps.map((step, index) => (
                 <article
                   key={step}
-                  className="rounded-[1.5rem] border border-slate-200 bg-white p-5"
+                  className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
                 >
-                  <p className="font-mono text-xs uppercase tracking-[0.24em] text-sky-700">
+                  <p className="font-mono text-xs uppercase tracking-[0.16em] text-cyan-700">
                     Passo {index + 1}
                   </p>
                   <p className="mt-3 text-sm leading-6 text-slate-700">

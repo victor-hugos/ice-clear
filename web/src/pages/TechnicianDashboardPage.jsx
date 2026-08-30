@@ -1,20 +1,20 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import SectionLabel from '../components/SectionLabel.jsx'
 import {
-  appendLocalTechnicianReply,
-  listLocalConsultationThreadsByTechnician,
-  updateLocalConsultationStatus,
+  appendTechnicianReply,
+  listConsultationThreadsByTechnician,
+  updateConsultationStatus,
 } from '../lib/consultationThreadData.js'
 import {
-  listLocalServiceRequestsByTechnician,
-  updateLocalServiceRequestStatus,
+  listServiceRequestsByTechnician,
+  updateServiceRequestStatus,
 } from '../lib/serviceRequestData.js'
 import {
   buildTechnicianInboxFeed,
   summarizeTechnicianInbox,
 } from '../lib/technicianInboxData.js'
-import { createLocalNotificationEvent } from '../lib/notificationCenterData.js'
+import { createNotificationEvent } from '../lib/notificationCenterData.js'
 
 function TechnicianDashboardPage() {
   const [searchParams] = useSearchParams()
@@ -22,15 +22,54 @@ function TechnicianDashboardPage() {
   const [refreshToken, setRefreshToken] = useState(0)
   const [actionMessage, setActionMessage] = useState('')
   const [replyDrafts, setReplyDrafts] = useState({})
+  const [serviceRequests, setServiceRequests] = useState([])
+  const [consultationThreads, setConsultationThreads] = useState([])
+  const [loadingState, setLoadingState] = useState('idle')
+  const [loadError, setLoadError] = useState('')
 
-  const serviceRequests = useMemo(() => {
-    void refreshToken
-    return slug ? listLocalServiceRequestsByTechnician(slug) : []
-  }, [refreshToken, slug])
+  useEffect(() => {
+    let active = true
 
-  const consultationThreads = useMemo(() => {
-    void refreshToken
-    return slug ? listLocalConsultationThreadsByTechnician(slug) : []
+    async function loadInbox() {
+      if (!slug) {
+        setServiceRequests([])
+        setConsultationThreads([])
+        setLoadError('')
+        setLoadingState('idle')
+        return
+      }
+
+      setLoadingState('loading')
+      setLoadError('')
+
+      try {
+        const [requestResult, threadResult] = await Promise.all([
+          listServiceRequestsByTechnician(slug),
+          listConsultationThreadsByTechnician(slug),
+        ])
+
+        if (!active) {
+          return
+        }
+
+        setServiceRequests(requestResult.requests)
+        setConsultationThreads(threadResult.threads)
+        setLoadingState('loaded')
+      } catch (error) {
+        if (!active) {
+          return
+        }
+
+        setLoadError(error.message)
+        setLoadingState('error')
+      }
+    }
+
+    void loadInbox()
+
+    return () => {
+      active = false
+    }
   }, [refreshToken, slug])
 
   const consultationThreadMap = useMemo(
@@ -49,52 +88,65 @@ function TechnicianDashboardPage() {
 
   const summary = useMemo(() => summarizeTechnicianInbox(inboxItems), [inboxItems])
 
-  const status = slug
+  const status = !slug
     ? {
-        type: 'success',
-        message:
-          actionMessage ||
-          'Painel carregado a partir do armazenamento local do MVP. O próximo passo é trocar isso por Supabase + notificação.',
-      }
-    : {
         type: 'error',
-        message: 'Informe o slug do técnico na URL para abrir o painel do MVP.',
+        message: 'Informe o slug do técnico na URL para abrir o painel.',
       }
+    : loadError
+      ? {
+          type: 'error',
+          message: `Falha ao carregar o painel: ${loadError}`,
+        }
+      : {
+          type: 'success',
+          message:
+            actionMessage ||
+            'Painel atualizado. Pedidos e conversas aparecem aqui quando chegam pelo QR.',
+        }
 
   function refreshInbox(nextMessage) {
     setRefreshToken((current) => current + 1)
     setActionMessage(nextMessage)
   }
 
-  function handleConfirmBooking(requestId) {
-    const updated = updateLocalServiceRequestStatus(requestId, 'confirmed')
+  async function handleConfirmBooking(requestId) {
+    try {
+      const { request: updated } = await updateServiceRequestStatus(requestId, 'confirmed')
 
-    if (updated) {
-      createLocalNotificationEvent({
-        type: 'booking_confirmed',
-        audience: 'technician',
-        technicianSlug: slug,
-        title: 'Pedido confirmado',
-        message: `O pedido de ${updated.customerName} foi confirmado pelo técnico.`,
-        relatedId: updated.id,
-      })
-      refreshInbox(`Pedido de ${updated.customerName} confirmado no MVP.`)
+      if (updated) {
+        await createNotificationEvent({
+          type: 'booking_confirmed',
+          audience: 'technician',
+          technicianSlug: slug,
+          title: 'Pedido confirmado',
+          message: `O pedido de ${updated.customerName} foi confirmado pelo técnico.`,
+          relatedId: updated.id,
+        })
+        refreshInbox(`Pedido de ${updated.customerName} confirmado.`)
+      }
+    } catch (error) {
+      setActionMessage(`Falha ao confirmar pedido: ${error.message}`)
     }
   }
 
-  function handleAnswerConsultation(threadId) {
-    const updated = updateLocalConsultationStatus(threadId, 'answered')
+  async function handleAnswerConsultation(threadId) {
+    try {
+      const { thread: updated } = await updateConsultationStatus(threadId, 'answered')
 
-    if (updated) {
-      createLocalNotificationEvent({
-        type: 'consultation_answered',
-        audience: 'technician',
-        technicianSlug: slug,
-        title: 'Conversa marcada como respondida',
-        message: `A conversa de ${updated.customerName} foi marcada como respondida.`,
-        relatedId: updated.id,
-      })
-      refreshInbox(`Conversa de ${updated.customerName} marcada como respondida no MVP.`)
+      if (updated) {
+        await createNotificationEvent({
+          type: 'consultation_answered',
+          audience: 'technician',
+          technicianSlug: slug,
+          title: 'Conversa marcada como respondida',
+          message: `A conversa de ${updated.customerName} foi marcada como respondida.`,
+          relatedId: updated.id,
+        })
+        refreshInbox(`Conversa de ${updated.customerName} marcada como respondida.`)
+      }
+    } catch (error) {
+      setActionMessage(`Falha ao atualizar conversa: ${error.message}`)
     }
   }
 
@@ -105,29 +157,33 @@ function TechnicianDashboardPage() {
     }))
   }
 
-  function handleSendReply(threadId) {
+  async function handleSendReply(threadId) {
     const replyBody = (replyDrafts[threadId] || '').trim()
 
     if (!replyBody) {
       return
     }
 
-    const updated = appendLocalTechnicianReply(threadId, replyBody)
+    try {
+      const { thread: updated } = await appendTechnicianReply(threadId, replyBody)
 
-    if (updated) {
-      createLocalNotificationEvent({
-        type: 'technician_reply_sent',
-        audience: 'technician',
-        technicianSlug: slug,
-        title: 'Resposta enviada',
-        message: `Uma resposta foi enviada para ${updated.customerName}.`,
-        relatedId: updated.id,
-      })
-      setReplyDrafts((current) => ({
-        ...current,
-        [threadId]: '',
-      }))
-      refreshInbox(`Resposta enviada para ${updated.customerName} no MVP.`)
+      if (updated) {
+        await createNotificationEvent({
+          type: 'technician_reply_sent',
+          audience: 'technician',
+          technicianSlug: slug,
+          title: 'Resposta enviada',
+          message: `Uma resposta foi enviada para ${updated.customerName}.`,
+          relatedId: updated.id,
+        })
+        setReplyDrafts((current) => ({
+          ...current,
+          [threadId]: '',
+        }))
+        refreshInbox(`Resposta enviada para ${updated.customerName}.`)
+      }
+    } catch (error) {
+      setActionMessage(`Falha ao enviar resposta: ${error.message}`)
     }
   }
 
@@ -139,7 +195,7 @@ function TechnicianDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-950 px-6 py-8 text-white sm:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-8 flex items-center justify-between rounded-full border border-white/10 bg-white/5 px-5 py-3 backdrop-blur">
+        <header className="mb-8 flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:rounded-full sm:py-3">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-sky-200">
               Ice Clear
@@ -149,21 +205,21 @@ function TechnicianDashboardPage() {
           <div className="flex gap-3">
             <Link
               to="/tecnico/onboarding"
-              className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+              className="rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
             >
-              Voltar para onboarding
+              Voltar para cadastro
             </Link>
             {slug ? (
               <>
                 <Link
                   to={`/tecnico/alertas?slug=${encodeURIComponent(slug)}`}
-                  className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+                  className="rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   Ver alertas
                 </Link>
                 <Link
                   to={`/t/${slug}`}
-                  className="rounded-full bg-sky-300 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-sky-200"
+                  className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
                 >
                   Abrir página pública
                 </Link>
@@ -213,11 +269,15 @@ function TechnicianDashboardPage() {
               Pedidos e conversas no mesmo lugar.
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-              Esse é o primeiro painel operacional do MVP. Aqui o técnico já consegue ver o que veio do fluxo direto e do fluxo consultivo, antes de entrarmos em notificação por WhatsApp e persistência total no backend.
+              Aqui o técnico acompanha pedidos diretos e conversas consultivas no mesmo lugar, com contexto suficiente para responder rápido e manter o cliente ativo.
             </p>
 
             <div className="mt-8 space-y-4">
-              {inboxItems.length > 0 ? (
+              {loadingState === 'loading' ? (
+                <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-sm leading-7 text-slate-600">
+                  Carregando pedidos e conversas do técnico...
+                </div>
+              ) : inboxItems.length > 0 ? (
                 inboxItems.map((item) => {
                   const thread = item.type === 'consultation' ? consultationThreadMap[item.id] : null
                   const latestMessage = thread?.messages?.at(-1) ?? null
@@ -264,18 +324,18 @@ function TechnicianDashboardPage() {
                         {item.type === 'booking' ? (
                           <button
                             type="button"
-                            onClick={() => handleConfirmBooking(item.id)}
+                            onClick={() => void handleConfirmBooking(item.id)}
                             disabled={item.status === 'confirmed'}
-                            className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="rounded-full border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {item.status === 'confirmed' ? 'Pedido confirmado' : 'Confirmar pedido'}
                           </button>
                         ) : (
                           <button
                             type="button"
-                            onClick={() => handleAnswerConsultation(item.id)}
+                            onClick={() => void handleAnswerConsultation(item.id)}
                             disabled={item.status === 'answered'}
-                            className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-800 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="rounded-full border border-cyan-700 bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {item.status === 'answered' ? 'Conversa respondida' : 'Marcar como respondida'}
                           </button>
@@ -298,8 +358,8 @@ function TechnicianDashboardPage() {
                             />
                             <button
                               type="button"
-                              onClick={() => handleSendReply(item.id)}
-                              className="self-start rounded-full border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                              onClick={() => void handleSendReply(item.id)}
+                              className="self-start rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
                             >
                               Enviar resposta
                             </button>
@@ -311,8 +371,8 @@ function TechnicianDashboardPage() {
                 })
               ) : (
                 <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-sm leading-7 text-slate-600">
-                  Ainda não há pedidos nem conversas para este técnico no MVP.
-                  Gere um onboarding com slug, abra a página pública e teste os dois fluxos do cliente para popular este painel.
+                  Ainda não há pedidos nem conversas para este técnico.
+                  Cadastre o técnico, abra a página pública do QR e teste os dois fluxos do cliente para popular este painel.
                 </div>
               )}
             </div>

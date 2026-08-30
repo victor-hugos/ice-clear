@@ -86,9 +86,9 @@ Two entry points define the product:
 
 ## Current Build Status
 
-- technician onboarding already supports Supabase persistence with local fallback
+- technician onboarding persists through the Cloudflare Worker API
 - public QR page already resolves technician data by slug
-- direct booking page already records structured requests locally in the MVP
-- consultation page already opens a structured conversation locally in the MVP
-- technician-side inbox already aggregates bookings and consultations locally in the MVP
-- WhatsApp notification and real technician actions are the next major product slices
+- direct booking page persists requests through the Cloudflare Worker API
+- consultation page persists conversation intake through the Cloudflare Worker API
+- technician-side inbox loads bookings and consultations from Cloudflare D1
+- WhatsApp notification, payment, and production validation are the next major product slices

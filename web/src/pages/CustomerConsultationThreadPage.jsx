@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import SectionLabel from '../components/SectionLabel.jsx'
-import { getLocalConsultationThreadByIdAndSlug } from '../lib/consultationThreadData.js'
+import { getConsultationThreadByIdAndSlug } from '../lib/consultationThreadData.js'
 import { getPublicTechnicianBySlug } from '../lib/technicianData.js'
 
 function CustomerConsultationThreadPage() {
   const { slug, threadId } = useParams()
+  const [searchParams] = useSearchParams()
+  const accessToken = searchParams.get('token') || ''
   const [status, setStatus] = useState({ type: 'loading', message: 'Carregando conversa...' })
   const [technician, setTechnician] = useState(null)
   const [thread, setThread] = useState(null)
@@ -16,7 +18,11 @@ function CustomerConsultationThreadPage() {
     async function loadThread() {
       try {
         const technicianData = await getPublicTechnicianBySlug(slug)
-        const threadData = getLocalConsultationThreadByIdAndSlug(threadId, slug)
+        const { thread: threadData } = await getConsultationThreadByIdAndSlug(
+          threadId,
+          slug,
+          accessToken,
+        )
 
         if (!active) {
           return
@@ -29,7 +35,7 @@ function CustomerConsultationThreadPage() {
           setStatus({
             type: 'error',
             message:
-              'Conversa não encontrada no MVP. Gere a conversa primeiro pelo fluxo de QR.',
+              'Conversa não encontrada. Gere a conversa primeiro pelo fluxo de QR ou use o link com token de acesso.',
           })
           return
         }
@@ -58,7 +64,7 @@ function CustomerConsultationThreadPage() {
     return () => {
       active = false
     }
-  }, [slug, threadId])
+  }, [accessToken, slug, threadId])
 
   const statusTone = {
     loading: 'border-sky-200 bg-sky-50 text-sky-800',
@@ -69,7 +75,7 @@ function CustomerConsultationThreadPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f7fbff_0%,#eef5f8_40%,#e8eef2_100%)] px-6 py-8 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-8 flex items-center justify-between rounded-full border border-white bg-white/90 px-5 py-3 shadow-[0_10px_40px_rgba(15,23,42,0.08)]">
+        <header className="mb-8 flex flex-col gap-3 rounded-3xl border border-white bg-white/90 px-5 py-4 shadow-[0_10px_40px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between sm:rounded-full sm:py-3">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-sky-700">
               Ice Clear
@@ -79,7 +85,7 @@ function CustomerConsultationThreadPage() {
           <div className="flex gap-3">
             <Link
               to={`/t/${slug}`}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
             >
               Voltar para o QR
             </Link>
@@ -88,7 +94,7 @@ function CustomerConsultationThreadPage() {
 
         <main className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="rounded-[2rem] border border-white bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-            <SectionLabel>Thread do cliente</SectionLabel>
+            <SectionLabel>Histórico do cliente</SectionLabel>
             <h1 className="mt-4 font-['Space_Grotesk',ui-sans-serif,system-ui] text-4xl font-semibold tracking-[-0.04em] text-slate-950">
               Veja a resposta do técnico no mesmo histórico.
             </h1>
@@ -154,7 +160,7 @@ function CustomerConsultationThreadPage() {
                 </div>
               ) : (
                 <p className="mt-5 text-sm leading-6 text-slate-600">
-                  Os dados completos aparecem aqui quando a thread existe no MVP.
+                  Os dados completos aparecem aqui quando a conversa está disponível.
                 </p>
               )}
             </section>

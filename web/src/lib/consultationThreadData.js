@@ -1,4 +1,5 @@
 import { buildConsultationRequest } from './consultationData.js'
+import { cloudflareApiRequest } from './cloudflareApiClient.js'
 
 const consultationThreadsStorageKey = 'ice-clear-consultation-threads'
 
@@ -28,6 +29,13 @@ function writeStoredConsultations(threads) {
   }
 
   window.localStorage.setItem(consultationThreadsStorageKey, JSON.stringify(threads))
+}
+
+function saveLocalConsultationThreadRecord(thread) {
+  const currentThreads = readStoredConsultations()
+  const nextThreads = [thread, ...currentThreads.filter((current) => current.id !== thread.id)]
+
+  writeStoredConsultations(nextThreads)
 }
 
 export function findConsultationThreadByIdAndSlug(threads, threadId, technicianSlug) {
@@ -78,6 +86,7 @@ export function createLocalConsultationThread(form) {
   const payload = buildConsultationRequest(form)
   const thread = {
     id: crypto.randomUUID(),
+    customerAccessToken: crypto.randomUUID(),
     ...payload,
     createdAt: new Date().toISOString(),
     messages: [
@@ -91,8 +100,7 @@ export function createLocalConsultationThread(form) {
     ],
   }
 
-  const currentThreads = readStoredConsultations()
-  writeStoredConsultations([thread, ...currentThreads])
+  saveLocalConsultationThreadRecord(thread)
 
   return thread
 }
@@ -131,4 +139,74 @@ export function appendLocalTechnicianReply(threadId, replyBody) {
   writeStoredConsultations(nextThreads)
 
   return nextThreads.find((thread) => thread.id === threadId) ?? null
+}
+
+export async function createConsultationThread(form) {
+  const payload = buildConsultationRequest(form)
+  const { thread } = await cloudflareApiRequest('/api/consultation-threads', {
+    method: 'POST',
+    body: payload,
+  })
+
+  saveLocalConsultationThreadRecord(thread)
+
+  return { mode: 'cloudflare', thread }
+}
+
+export async function listConsultationThreadsByTechnician(technicianSlug) {
+  const query = new URLSearchParams({ technicianSlug })
+  const { threads } = await cloudflareApiRequest(`/api/consultation-threads?${query}`)
+
+  threads.forEach(saveLocalConsultationThreadRecord)
+
+  return { mode: 'cloudflare', threads }
+}
+
+export async function getConsultationThreadByIdAndSlug(
+  threadId,
+  technicianSlug,
+  accessToken = '',
+) {
+  const query = new URLSearchParams({
+    technicianSlug,
+    token: accessToken,
+  })
+  const { thread } = await cloudflareApiRequest(
+    `/api/consultation-threads/${encodeURIComponent(threadId)}?${query}`,
+  )
+
+  saveLocalConsultationThreadRecord(thread)
+
+  return { mode: 'cloudflare', thread }
+}
+
+export async function updateConsultationStatus(threadId, nextStatus) {
+  const { thread } = await cloudflareApiRequest(
+    `/api/consultation-threads/${encodeURIComponent(threadId)}/status`,
+    {
+      method: 'PATCH',
+      body: { status: nextStatus },
+    },
+  )
+
+  saveLocalConsultationThreadRecord(thread)
+
+  return {
+    mode: 'cloudflare',
+    thread,
+  }
+}
+
+export async function appendTechnicianReply(threadId, replyBody) {
+  const { thread } = await cloudflareApiRequest(
+    `/api/consultation-threads/${encodeURIComponent(threadId)}/messages`,
+    {
+      method: 'POST',
+      body: { body: replyBody },
+    },
+  )
+
+  saveLocalConsultationThreadRecord(thread)
+
+  return { mode: 'cloudflare', thread }
 }

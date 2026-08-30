@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Fechar a camada de experiencia do MVP com uma timeline local de eventos relevantes.
+Fechar a camada de experiencia do MVP com uma timeline de eventos relevantes salva no Cloudflare D1.
 
 ## Rota atual
 
@@ -18,9 +18,10 @@ Fechar a camada de experiencia do MVP com uma timeline local de eventos relevant
 
 ## Comportamento
 
-- eventos sao gerados localmente
+- eventos sao gerados pelo frontend e salvos via `/api/notifications`
 - a timeline e ordenada do mais novo para o mais antigo
 - serve como preparacao direta para WhatsApp, push ou email depois
+- o tecnico consulta os alertas por `audience` e `technicianSlug`
 
 ## Arquivos principais
 

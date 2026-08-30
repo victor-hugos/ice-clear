@@ -17,10 +17,6 @@ export default defineConfig({
             return 'router'
           }
 
-          if (id.includes('@supabase/supabase-js')) {
-            return 'supabase'
-          }
-
           if (id.includes('react')) {
             return 'react-vendor'
           }

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import SectionLabel from '../components/SectionLabel.jsx'
 import { validateConsultationForm } from '../lib/consultationData.js'
-import { createLocalConsultationThread } from '../lib/consultationThreadData.js'
-import { createLocalNotificationEvent } from '../lib/notificationCenterData.js'
+import { createConsultationThread } from '../lib/consultationThreadData.js'
+import { createNotificationEvent } from '../lib/notificationCenterData.js'
 import { getPublicTechnicianBySlug } from '../lib/technicianData.js'
 
 const attachmentKinds = [
@@ -29,6 +29,7 @@ function CustomerConsultationPage() {
   const [errors, setErrors] = useState({})
   const [attachments, setAttachments] = useState([])
   const [submittedThread, setSubmittedThread] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -45,7 +46,7 @@ function CustomerConsultationPage() {
           setStatus({
             type: 'error',
             message:
-              'Não encontramos um técnico publicado para este QR. Volte e finalize o onboarding do técnico.',
+              'Não encontramos um técnico publicado para este QR. Volte e finalize o cadastro do técnico.',
           })
           return
         }
@@ -53,10 +54,7 @@ function CustomerConsultationPage() {
         setTechnician(data)
         setStatus({
           type: 'success',
-          message:
-            data.mode === 'supabase'
-              ? 'Técnico carregado do Supabase. Você já pode iniciar a conversa.'
-              : 'Técnico carregado do fallback local do MVP. Você já pode iniciar a conversa.',
+          message: 'Técnico identificado. Você já pode iniciar a conversa.',
         })
       } catch (error) {
         if (!active) {
@@ -101,7 +99,7 @@ function CustomerConsultationPage() {
     setAttachments((current) => current.filter((_, index) => index !== indexToRemove))
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const nextErrors = validateConsultationForm({
@@ -120,35 +118,48 @@ function CustomerConsultationPage() {
       return
     }
 
+    setIsSubmitting(true)
 
-const thread = createLocalConsultationThread({
-  ...form,
-  technicianSlug: slug,
-  attachments,
-})
+    try {
+      const { thread } = await createConsultationThread({
+        ...form,
+        technicianSlug: slug,
+        attachments,
+      })
 
-createLocalNotificationEvent({
-  type: 'consultation_created',
-  audience: 'technician',
-  technicianSlug: slug,
-  title: 'Nova conversa consultiva',
-  message: `${thread.customerName} iniciou uma conversa sobre o defeito do equipamento.`,
-  relatedId: thread.id,
-})
+      await createNotificationEvent({
+        type: 'consultation_created',
+        audience: 'technician',
+        technicianSlug: slug,
+        title: 'Nova conversa consultiva',
+        message: `${thread.customerName} iniciou uma conversa sobre o defeito do equipamento.`,
+        relatedId: thread.id,
+      })
 
-    setSubmittedThread(thread)
-    setStatus({
-      type: 'success',
-      message:
-        'Conversa iniciada no MVP. Você já pode acompanhar esta thread e aguardar a resposta do técnico.',
-    })
-    setForm(initialForm)
-    setAttachments([])
-    setErrors({})
+      setSubmittedThread(thread)
+      setStatus({
+        type: 'success',
+        message: 'Conversa iniciada. O técnico poderá responder pelo painel e manter o histórico organizado.',
+      })
+      setForm(initialForm)
+      setAttachments([])
+      setErrors({})
 
-    window.setTimeout(() => {
-      navigate(`/t/${slug}/conversar/${thread.id}`)
-    }, 600)
+      window.setTimeout(() => {
+        const tokenQuery = thread.customerAccessToken
+          ? `?token=${encodeURIComponent(thread.customerAccessToken)}`
+          : ''
+
+        navigate(`/t/${slug}/conversar/${thread.id}${tokenQuery}`)
+      }, 600)
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        message: `Falha ao iniciar conversa: ${error.message}`,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const statusTone = {
@@ -160,7 +171,7 @@ createLocalNotificationEvent({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f7fbff_0%,#eef5f8_40%,#e8eef2_100%)] px-6 py-8 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8 flex items-center justify-between rounded-full border border-white bg-white/90 px-5 py-3 shadow-[0_10px_40px_rgba(15,23,42,0.08)]">
+        <header className="mb-8 flex flex-col gap-3 rounded-3xl border border-white bg-white/90 px-5 py-4 shadow-[0_10px_40px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between sm:rounded-full sm:py-3">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-sky-700">
               Ice Clear
@@ -169,7 +180,7 @@ createLocalNotificationEvent({
           </div>
           <Link
             to={`/t/${slug}`}
-            className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+            className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
           >
             Voltar para o QR
           </Link>
@@ -183,7 +194,7 @@ createLocalNotificationEvent({
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
               Esse fluxo cobre o cliente que ainda precisa explicar o problema.
-              No MVP, ele já registra a descrição, o canal de resposta e os anexos como metadados.
+              A descrição, o canal de resposta e os anexos ficam organizados para o técnico avaliar antes de agendar.
             </p>
 
             <div className={`mt-6 rounded-2xl border px-4 py-3 text-sm ${statusTone[status.type] || statusTone.loading}`}>
@@ -237,7 +248,7 @@ createLocalNotificationEvent({
               </label>
 
               <div className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Anexo do MVP</span>
+                <span className="mb-2 block text-sm font-medium text-slate-700">Anexo</span>
                 <div className="flex gap-2">
                   <select
                     value={form.attachmentKind}
@@ -259,7 +270,7 @@ createLocalNotificationEvent({
                   <button
                     type="button"
                     onClick={addAttachment}
-                    className="rounded-full border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    className="rounded-full border border-emerald-700 bg-emerald-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800"
                   >
                     Adicionar
                   </button>
@@ -281,7 +292,7 @@ createLocalNotificationEvent({
                     ))
                   ) : (
                     <p className="text-sm text-slate-500">
-                      Sem anexos ainda. No MVP, usamos metadados para simular áudio e foto.
+                      Sem anexos ainda. Adicione áudio ou foto quando quiser orientar melhor o técnico.
                     </p>
                   )}
                 </div>
@@ -290,9 +301,10 @@ createLocalNotificationEvent({
               <div className="md:col-span-2">
                 <button
                   type="submit"
-                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                  disabled={isSubmitting}
+                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Iniciar conversa com o técnico
+                  {isSubmitting ? 'Iniciando conversa...' : 'Iniciar conversa com o técnico'}
                 </button>
               </div>
             </form>
@@ -330,7 +342,7 @@ createLocalNotificationEvent({
                 </div>
               ) : (
                 <p className="mt-5 text-sm leading-6 text-slate-600">
-                  Depois do envio, a abertura da conversa aparece aqui como confirmação rápida do MVP.
+                  Depois do envio, a abertura da conversa aparece aqui como confirmação rápida.
                 </p>
               )}
             </section>

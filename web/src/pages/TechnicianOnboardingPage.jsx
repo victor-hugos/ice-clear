@@ -56,7 +56,7 @@ function TechnicianOnboardingPage() {
   useEffect(() => {
     let active = true
 
-    async function hydrateFromSupabase() {
+    async function hydrateFromCloudflare() {
       try {
         const session = await getCurrentTechnicianSession()
 
@@ -81,9 +81,9 @@ function TechnicianOnboardingPage() {
         setStatus({
           type: 'success',
           message:
-            onboarding.mode === 'supabase'
-              ? 'Perfil carregado do Supabase. Você pode continuar editando.'
-              : 'Usando rascunho local até a autenticação do Supabase ser concluída.',
+            onboarding.mode === 'cloudflare'
+              ? 'Cloudflare pronta para salvar o perfil.'
+              : 'Rascunho carregado neste navegador. Você pode continuar editando.',
         })
       } catch (error) {
         if (!active) {
@@ -93,12 +93,12 @@ function TechnicianOnboardingPage() {
         setSessionMode('local')
         setStatus({
           type: 'error',
-          message: `Não foi possível carregar o onboarding salvo: ${error.message}`,
+          message: `Não foi possível carregar o cadastro salvo: ${error.message}`,
         })
       }
     }
 
-    void hydrateFromSupabase()
+    void hydrateFromCloudflare()
 
     return () => {
       active = false
@@ -146,7 +146,7 @@ function TechnicianOnboardingPage() {
     event.preventDefault()
 
     const savedAtValue = saveDraftLocally(draft.source)
-    setStatus({ type: 'loading', message: 'Salvando onboarding...' })
+    setStatus({ type: 'loading', message: 'Salvando cadastro...' })
 
     try {
       const result = await saveTechnicianOnboardingData(form)
@@ -167,15 +167,12 @@ function TechnicianOnboardingPage() {
 
       setStatus({
         type: 'success',
-        message:
-          result.mode === 'supabase'
-            ? `Perfil salvo no Supabase. Página pública pronta em ${result.publicPath}.`
-            : `Supabase ainda não conectado. O perfil foi salvo localmente e a prévia pública está pronta em ${result.publicPath}.`,
+        message: `Perfil salvo. Página pública pronta em ${result.publicPath}.`,
       })
     } catch (error) {
       setStatus({
         type: 'error',
-        message: `Falha ao salvar o onboarding: ${error.message}`,
+        message: `Falha ao salvar o cadastro: ${error.message}`,
       })
     }
   }
@@ -192,23 +189,23 @@ function TechnicianOnboardingPage() {
   return (
     <div className="min-h-screen bg-slate-100 px-6 py-8 text-slate-900 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl">
-        <header className="mb-8 flex items-center justify-between rounded-full border border-white bg-white/90 px-5 py-3 shadow-[0_10px_40px_rgba(15,23,42,0.08)]">
+        <header className="mb-8 flex flex-col gap-3 rounded-3xl border border-white bg-white/90 px-5 py-4 shadow-[0_10px_40px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between sm:rounded-full sm:py-3">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-sky-700">
               Ice Clear
             </p>
-            <p className="text-sm text-slate-600">Onboarding do técnico</p>
+            <p className="text-sm text-slate-600">Cadastro do técnico</p>
           </div>
           <div className="flex gap-3">
             <Link
               to="/tecnico/entrar"
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
             >
               Voltar
             </Link>
             <Link
               to={publicLink}
-              className="rounded-full bg-slate-950 px-4 py-2 text-sm text-white transition hover:bg-slate-800"
+              className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
             >
               Ver página pública
             </Link>
@@ -222,15 +219,12 @@ function TechnicianOnboardingPage() {
               O técnico precisa preencher só o necessário para começar.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-              Nesta primeira etapa, o objetivo é cadastrar o perfil público,
-              os serviços oferecidos e o slug do QR. Quando houver sessão do
-              Supabase, o formulário carrega e salva em banco; sem sessão,
-              continua operando como fallback local.
+              Cadastre as informações essenciais para criar a página pública do QR: nome, região, WhatsApp e serviços oferecidos.
             </p>
 
             <div className={`mt-6 rounded-2xl border px-4 py-3 text-sm ${statusTone[status.type] || statusTone.idle}`}>
               {status.message ||
-                `Modo atual: ${sessionMode === 'checking' ? 'verificando sessão' : sessionMode}. Fonte do rascunho: ${draft.source}.`}
+                (sessionMode === `checking` ? `Verificando acesso...` : `Cadastro pronto para edição.`)}
             </div>
 
             <form className="mt-8 grid gap-5 md:grid-cols-2" onSubmit={handleSubmit}>
@@ -354,19 +348,19 @@ function TechnicianOnboardingPage() {
               <div className="md:col-span-2 flex flex-wrap items-center gap-3">
                 <button
                   type="submit"
-                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                  className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
                 >
-                  Salvar onboarding
+                  Salvar cadastro
                 </button>
                 <Link
                   to={publicLink}
-                  className="rounded-full border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
                 >
                   Pré-visualizar página pública
                 </Link>
                 <Link
                   to={dashboardLink}
-                  className="rounded-full border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50"
                 >
                   Abrir painel do técnico
                 </Link>
@@ -392,8 +386,6 @@ function TechnicianOnboardingPage() {
                   </div>
                   <div className="grid h-20 w-20 place-items-center rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,#0f172a,#1d4ed8)] text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-white">
                     QR
-                    <br />
-                    MVP
                   </div>
                 </div>
                 <div className="mt-5 flex flex-wrap gap-2">
@@ -424,16 +416,16 @@ function TechnicianOnboardingPage() {
             </section>
 
             <section className="rounded-[2rem] border border-white bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-              <SectionLabel>Persistência desta etapa</SectionLabel>
+              <SectionLabel>Como usar</SectionLabel>
               <ul className="mt-5 space-y-3 text-sm leading-6 text-slate-700">
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  Com sessão válida, salva no Supabase.
+                  Salve o cadastro para gerar a página pública do QR.
                 </li>
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  Sem sessão, salva localmente sem bloquear o fluxo.
+                  Use a prévia para conferir como o cliente verá os serviços.
                 </li>
                 <li className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  A página pública já consegue ler o perfil salvo por slug.
+                  Abra o painel para acompanhar pedidos e conversas do técnico.
                 </li>
               </ul>
             </section>

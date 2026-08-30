@@ -10,7 +10,7 @@ Permitir que o cliente acompanhe a resposta do técnico dentro da mesma thread c
 
 ## Comportamento do MVP
 
-- carrega a thread local pelo `slug` e `threadId`
+- carrega a thread pelo `slug`, `threadId` e token usando a API Worker
 - mostra histórico de mensagens do cliente e do técnico
 - destaca quando a conversa já foi respondida
 
