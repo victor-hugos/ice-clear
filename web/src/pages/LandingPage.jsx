@@ -47,13 +47,13 @@ function LandingPage() {
         <header className="mb-5 flex flex-col gap-3 border-b border-slate-200/80 bg-[#f5f7f4]/95 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <img
-              src="/2.jpg"
+              src="/2.png"
               alt="Ícone da marca Ice Clear"
               className="h-12 w-12 rounded-xl border border-slate-200 bg-white/70 object-cover p-1 shadow-sm"
             />
             <div>
               <img
-                src="/1.jpg"
+                src="/1.png"
                 alt="Logo Ice Clear"
                 className="h-8 w-auto object-contain"
               />
